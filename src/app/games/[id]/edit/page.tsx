@@ -23,9 +23,9 @@ interface PageProps {
   };
 }
 
-export default function EditGamePage(props: PageProps) {
+export default function EditGamePage({ params }: PageProps) {
   const router = useRouter();
-  const gameId = props.params.id;
+  const gameId = params.id;
 
   // プレイヤー一覧を保持する状態
   const [players, setPlayers] = useState<Player[]>([]);
