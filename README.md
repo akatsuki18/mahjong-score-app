@@ -1,36 +1,98 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 麻雀スコア管理アプリ
 
-## Getting Started
+麻雀の対局結果を記録・管理するためのWebアプリケーションです。
 
-First, run the development server:
+## 機能
+
+- プレイヤー管理（登録、一覧表示、詳細表示）
+- 対局記録（登録、一覧表示、詳細表示）
+- 統計情報（プレイヤー別、日別、月別）
+- ダッシュボード（概要、最近の対局、統計）
+
+## 技術スタック
+
+- **フロントエンド**: Next.js, TypeScript, Tailwind CSS, Shadcn UI
+- **バックエンド**: Supabase (PostgreSQL)
+- **デプロイ**: Vercel
+
+## セットアップ手順
+
+### 1. リポジトリのクローン
+
+```bash
+git clone <repository-url>
+cd mahjong-score-app
+```
+
+### 2. 依存関係のインストール
+
+```bash
+npm install
+```
+
+### 3. 環境変数の設定
+
+このアプリケーションを実行するには、Supabaseの認証情報を設定する必要があります。
+
+1. `.env.example`ファイルを`.env.local`としてコピーします
+2. `.env.local`ファイルに以下の情報を設定します：
+   - `NEXT_PUBLIC_SUPABASE_URL`: SupabaseプロジェクトのURL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabaseの匿名キー
+
+これらの値はSupabaseのダッシュボードから取得できます。
+
+### 4. Supabaseのテーブル設定
+
+Supabaseのダッシュボードで、以下のSQLを実行してテーブルを作成します：
+
+1. Supabaseダッシュボード（https://app.supabase.com）にログイン
+2. プロジェクトを選択
+3. 「SQL Editor」を開く
+4. `src/db/schema.sql`の内容をコピーして実行
+
+または、以下のコマンドでSQLファイルを実行することもできます：
+
+```bash
+supabase db push
+```
+
+### 5. 開発サーバーの起動
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+ブラウザで [http://localhost:3000](http://localhost:3000) を開いてアプリケーションを確認できます。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## デプロイ
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Vercelを使用してデプロイする場合：
 
-## Learn More
+1. Vercelアカウントを作成
+2. プロジェクトをインポート
+3. 環境変数を設定
+4. デプロイ
 
-To learn more about Next.js, take a look at the following resources:
+## ライセンス
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+MIT
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## データベース構造
 
-## Deploy on Vercel
+このアプリケーションは以下のテーブルを使用します：
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `players`: プレイヤー情報
+- `games`: 対局情報
+- `game_results`: 対局結果
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 開発方法
+
+```bash
+# 依存関係のインストール
+npm install
+
+# 開発サーバーの起動
+npm run dev
+```
+
+ブラウザで [http://localhost:3000](http://localhost:3000) を開いてアプリケーションを確認できます。
