@@ -89,8 +89,8 @@ export default function Home() {
           .from('game_results')
           .select(`
             score,
-            player:players(name),
-            game:games(date)
+            players(name),
+            games(date)
           `)
           .order('score', { ascending: false })
           .limit(1);
@@ -98,8 +98,8 @@ export default function Home() {
         const highestScore = highScoreData && highScoreData.length > 0
           ? {
               score: highScoreData[0].score,
-              playerName: highScoreData[0].player?.name || '不明',
-              date: highScoreData[0].game?.date || ''
+              playerName: highScoreData[0].players[0]?.name || '不明',
+              date: highScoreData[0].games[0]?.date || ''
             }
           : null;
 
@@ -110,15 +110,15 @@ export default function Home() {
             player_id,
             total_points,
             games_played,
-            player:players(id, name)
+            players(id, name)
           `)
           .order('total_points', { ascending: false })
           .limit(5);
 
         const topPlayers = topPlayersData
           ? topPlayersData.map(item => ({
-              id: item.player?.id || '',
-              name: item.player?.name || '不明',
+              id: item.players[0]?.id || '',
+              name: item.players[0]?.name || '不明',
               total_points: item.total_points,
               games_played: item.games_played
             }))
