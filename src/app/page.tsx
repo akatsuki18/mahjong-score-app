@@ -15,7 +15,6 @@ interface DashboardData {
   totalGames: number;
   monthlyGames: number;
   totalPlayers: number;
-  averageScore: number;
   highestScore: {
     score: number;
     playerName: string;
@@ -34,7 +33,6 @@ export default function Home() {
     totalGames: 0,
     monthlyGames: 0,
     totalPlayers: 0,
-    averageScore: 0,
     highestScore: null,
     topPlayers: []
   });
@@ -62,15 +60,6 @@ export default function Home() {
         const { count: totalPlayers } = await supabase
           .from('players')
           .select('*', { count: 'exact', head: true });
-
-        // 平均得点を取得
-        const { data: scoreData } = await supabase
-          .from('game_results')
-          .select('score');
-
-        const averageScore = scoreData && scoreData.length > 0
-          ? Math.round(scoreData.reduce((sum, item) => sum + item.score, 0) / scoreData.length)
-          : 0;
 
         // 最高得点を取得
         const { data: highScoreData } = await supabase
@@ -171,7 +160,6 @@ export default function Home() {
           totalGames: totalGames || 0,
           monthlyGames: monthlyGames || 0,
           totalPlayers: totalPlayers || 0,
-          averageScore,
           highestScore,
           topPlayers: playerTotals.length > 0 ? playerTotals.slice(0, 5) : topPlayers
         });
@@ -216,54 +204,7 @@ export default function Home() {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">総対局数</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{data.totalGames}</div>
-                <p className="text-xs text-muted-foreground">
-                  今月: {data.monthlyGames}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">登録プレイヤー</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{data.totalPlayers}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">平均得点</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{data.averageScore.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">
-                  全プレイヤー平均
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">最高得点</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {data.highestScore ? data.highestScore.score.toLocaleString() : 0}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {data.highestScore
-                    ? `${data.highestScore.playerName} (${formatDate(data.highestScore.date)})`
-                    : '記録なし'}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
+          {/* プレイヤー別合計得点と成績トップ */}
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
             <Card className="w-full overflow-hidden">
               <CardHeader>
@@ -329,6 +270,44 @@ export default function Home() {
                 ) : (
                   <p className="text-sm text-muted-foreground">データがありません</p>
                 )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* 統計カード（総対局数、最高得点、登録プレイヤー） */}
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">総対局数</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{data.totalGames}</div>
+                <p className="text-xs text-muted-foreground">
+                  今月: {data.monthlyGames}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">最高得点</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {data.highestScore ? data.highestScore.score.toLocaleString() : 0}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {data.highestScore
+                    ? `${data.highestScore.playerName} (${formatDate(data.highestScore.date)})`
+                    : '記録なし'}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">登録プレイヤー</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{data.totalPlayers}</div>
               </CardContent>
             </Card>
           </div>
