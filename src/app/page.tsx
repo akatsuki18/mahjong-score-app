@@ -187,6 +187,8 @@ export default function Home() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">ダッシュボード</h1>
+      </div>
+      <div className="flex items-center justify-between">
         <div className="flex space-x-2">
           <Link href="/games/new" passHref>
             <Button>新規対局登録</Button>
@@ -228,17 +230,6 @@ export default function Home() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{data.totalPlayers}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">平均得点</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{data.averageScore.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">
-                    全プレイヤー平均
-                  </p>
                 </CardContent>
               </Card>
               <Card>
