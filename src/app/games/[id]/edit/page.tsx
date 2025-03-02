@@ -17,9 +17,15 @@ interface HansoData {
   };
 }
 
-export default function EditGamePage({ params }: { params: { id: string } }) {
+interface PageProps {
+  params: {
+    id: string;
+  };
+}
+
+export default function EditGamePage(props: PageProps) {
   const router = useRouter();
-  const gameId = params.id;
+  const gameId = props.params.id;
 
   // プレイヤー一覧を保持する状態
   const [players, setPlayers] = useState<Player[]>([]);

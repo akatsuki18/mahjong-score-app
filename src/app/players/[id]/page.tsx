@@ -6,10 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Player, Game } from "@/types";
-import { format } from "date-fns";
-import { ja } from "date-fns/locale";
-import { ArrowLeft, Edit } from "lucide-react";
+import { Player } from "@/types";
 import { notFound } from "next/navigation";
 
 // プレイヤー情報を取得する関数
@@ -29,7 +26,7 @@ async function getPlayer(id: string): Promise<Player | null> {
 }
 
 // プレイヤーの対局結果を取得する関数
-async function getPlayerResults(playerId: string): Promise<any[]> {
+async function getPlayerResults(playerId: string): Promise<Record<string, unknown>[]> {
   const { data, error } = await supabase
     .from("game_results")
     .select(`
@@ -48,7 +45,7 @@ async function getPlayerResults(playerId: string): Promise<any[]> {
 }
 
 // プレイヤーの統計情報を取得する関数
-async function getPlayerStats(playerId: string): Promise<any | null> {
+async function getPlayerStats(playerId: string): Promise<Record<string, unknown> | null> {
   const { data, error } = await supabase
     .from("player_stats")
     .select("*")
@@ -64,22 +61,70 @@ async function getPlayerStats(playerId: string): Promise<any | null> {
 }
 
 interface PageProps {
-  params: Promise<{
+  params: {
     id: string;
-  }>;
+  };
 }
 
-export default async function PlayerDetailPage(props: PageProps) {
-  // Next.js 15では、paramsはPromiseになったため、awaitする必要があります
-  const params = await props.params;
-  const playerId = params.id;
+interface GameResult {
+  id: string;
+  player_id: string;
+  game_id: string;
+  rank: number;
+  score: number;
+  point: number;
+  games: {
+    id: string;
+    date: string;
+    venue: string | null;
+  };
+}
 
-  const player = await getPlayer(playerId);
-  const gameResults = await getPlayerResults(playerId);
-  const stats = await getPlayerStats(playerId);
+interface PlayerStats {
+  player_id: string;
+  games_played: number;
+  average_rank: number;
+  average_points: number;
+  total_points: number;
+  first_place_rate: number;
+  fourth_place_rate: number;
+}
 
-  if (!player) {
-    notFound();
+export default function PlayerDetailPage(props: PageProps) {
+  const [player, setPlayer] = useState<Player | null>(null);
+  const [gameResults, setGameResults] = useState<GameResult[]>([]);
+  const [stats, setStats] = useState<PlayerStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const playerId = props.params.id;
+
+        const playerData = await getPlayer(playerId);
+        if (!playerData) {
+          notFound();
+          return;
+        }
+
+        const resultsData = await getPlayerResults(playerId);
+        const statsData = await getPlayerStats(playerId);
+
+        setPlayer(playerData);
+        setGameResults(resultsData as unknown as GameResult[]);
+        setStats(statsData as unknown as PlayerStats);
+      } catch (error) {
+        console.error("データ読み込みエラー:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, [props.params.id]);
+
+  if (loading || !player) {
+    return <div>読み込み中...</div>;
   }
 
   return (

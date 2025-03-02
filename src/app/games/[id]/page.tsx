@@ -22,18 +22,26 @@ interface HansoResults {
   [hansoNumber: number]: GameResultWithPlayer[];
 }
 
-export default function GameDetailPage({ params }: { params: { id: string } }) {
+interface PageProps {
+  params: {
+    id: string;
+  };
+}
+
+export default function GameDetailPage(props: PageProps) {
+  const gameId = props.params.id;
+
   const [game, setGame] = useState<Game | null>(null);
   const [results, setResults] = useState<GameResultWithPlayer[]>([]);
   const [hansoResults, setHansoResults] = useState<HansoResults>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // ゲーム情報と結果を取得
   useEffect(() => {
     async function fetchGameDetails() {
       try {
         setLoading(true);
-        const gameId = params.id;
 
         // ゲーム情報を取得
         const { data: gameData, error: gameError } = await supabase
@@ -45,12 +53,14 @@ export default function GameDetailPage({ params }: { params: { id: string } }) {
         if (gameError) throw gameError;
         setGame(gameData);
 
-        // ゲーム結果を取得（プレイヤー情報も含む）
+        // ゲーム結果を取得
         const { data: resultsData, error: resultsError } = await supabase
           .from("game_results")
-          .select("*, player:players(*)")
-          .eq("game_id", gameId)
-          .order("hanso_number, rank");
+          .select(`
+            *,
+            player:players(*)
+          `)
+          .eq("game_id", gameId);
 
         if (resultsError) throw resultsError;
         setResults(resultsData);
@@ -67,68 +77,48 @@ export default function GameDetailPage({ params }: { params: { id: string } }) {
 
         setHansoResults(groupedResults);
       } catch (err: Error | unknown) {
-        console.error("ゲーム詳細取得エラー:", err);
-        setError(err instanceof Error ? err.message : "ゲーム詳細の取得中にエラーが発生しました");
+        console.error("データ取得エラー:", err);
+        setError(err instanceof Error ? err.message : "データの取得中にエラーが発生しました");
       } finally {
         setLoading(false);
       }
     }
 
     fetchGameDetails();
-  }, [params.id]);
+  }, [gameId]);
 
   // 日付をフォーマットする関数
   const formatDate = (dateString: string) => {
     try {
-      return format(new Date(dateString), 'yyyy年MM月dd日(E)', { locale: ja });
+      return format(new Date(dateString), "yyyy年MM月dd日", { locale: ja });
     } catch (_) {
       return dateString;
     }
   };
 
-  // プレイヤーごとの合計得点を計算
-  const calculateTotalScores = () => {
-    if (!results.length) return {};
-
-    const totals: { [playerId: string]: number } = {};
-
-    results.forEach(result => {
-      const playerId = result.player.id;
-      if (!totals[playerId]) {
-        totals[playerId] = 0;
-      }
-      totals[playerId] += result.score;
-    });
-
-    return totals;
-  };
-
+  // 読み込み中の表示
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <p className="text-muted-foreground">読み込み中...</p>
+      <div className="flex justify-center items-center h-64">
+        <p className="text-lg">読み込み中...</p>
       </div>
     );
   }
 
+  // エラー表示
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
-        <p className="text-red-500">{error}</p>
-        <Link href="/games" passHref>
-          <Button variant="outline">対局一覧に戻る</Button>
-        </Link>
+      <div className="flex justify-center items-center h-64">
+        <p className="text-lg text-red-500">{error}</p>
       </div>
     );
   }
 
+  // ゲームが見つからない場合
   if (!game) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
-        <p className="text-muted-foreground">対局が見つかりませんでした</p>
-        <Link href="/games" passHref>
-          <Button variant="outline">対局一覧に戻る</Button>
-        </Link>
+      <div className="flex justify-center items-center h-64">
+        <p className="text-lg">対局が見つかりませんでした</p>
       </div>
     );
   }
@@ -145,7 +135,13 @@ export default function GameDetailPage({ params }: { params: { id: string } }) {
   }, []);
 
   // プレイヤーごとの合計得点
-  const totalScores = calculateTotalScores();
+  const totalScores: { [playerId: string]: number } = {};
+  results.forEach(result => {
+    if (!totalScores[result.player.id]) {
+      totalScores[result.player.id] = 0;
+    }
+    totalScores[result.player.id] += result.score;
+  });
 
   return (
     <div className="space-y-6">
@@ -154,16 +150,15 @@ export default function GameDetailPage({ params }: { params: { id: string } }) {
           <Link href="/games" passHref>
             <Button variant="ghost" size="sm" className="flex items-center gap-1">
               <ArrowLeft size={16} />
-              <span>戻る</span>
+              対局一覧に戻る
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold">対局詳細</h1>
         </div>
         <div className="flex items-center space-x-2">
-          <Link href={`/games/${params.id}/edit`} passHref>
+          <Link href={`/games/${gameId}/edit`} passHref>
             <Button variant="outline" className="flex items-center gap-1">
               <Edit size={16} />
-              <span>編集</span>
+              編集
             </Button>
           </Link>
         </div>
@@ -171,24 +166,14 @@ export default function GameDetailPage({ params }: { params: { id: string } }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>対局情報</CardTitle>
+          <CardTitle>対局詳細</CardTitle>
           <CardDescription>
-            {formatDate(game.date)}に行われた対局の詳細情報
+            {formatDate(game.date)}
+            {game.venue && ` @ ${game.venue}`}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground">日付</h3>
-              <p>{formatDate(game.date)}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground">場所</h3>
-              <p>{game.venue || "未設定"}</p>
-            </div>
-          </div>
-
-          <div className="pt-4">
+        <CardContent>
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
