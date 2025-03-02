@@ -22,7 +22,8 @@ interface HansoResults {
   [hansoNumber: number]: GameResultWithPlayer[];
 }
 
-interface PageProps {
+// Next.js 15の型定義に合わせて修正
+type PageProps = {
   params: {
     id: string;
   };

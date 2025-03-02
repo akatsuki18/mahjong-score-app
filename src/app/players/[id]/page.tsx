@@ -60,7 +60,8 @@ async function getPlayerStats(playerId: string): Promise<Record<string, unknown>
   return data;
 }
 
-interface PageProps {
+// Next.js 15の型定義に合わせて修正
+type PageProps = {
   params: {
     id: string;
   };
