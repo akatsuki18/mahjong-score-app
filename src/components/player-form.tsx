@@ -9,33 +9,32 @@ import { supabase } from "@/lib/supabase";
 export function PlayerForm() {
   const router = useRouter();
   const [name, setName] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+    setIsSubmitting(true);
+    setError("");
 
     try {
-      // Supabaseにプレイヤーを登録
-      const { data, error } = await supabase
-        .from("players")
-        .insert([{ name }])
-        .select();
-
-      if (error) {
-        throw error;
+      if (!name.trim()) {
+        throw new Error("プレイヤー名を入力してください");
       }
 
-      // 登録成功後、プレイヤー一覧ページにリダイレクト
+      const { error } = await supabase
+        .from("players")
+        .insert([{ name }]);
+
+      if (error) throw error;
+
       router.push("/players");
       router.refresh();
     } catch (err) {
       console.error("プレイヤー登録エラー:", err);
       setError("プレイヤーの登録に失敗しました。もう一度お試しください。");
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -54,7 +53,7 @@ export function PlayerForm() {
           placeholder="プレイヤー名を入力"
           className="w-full p-2 border rounded-md"
           required
-          disabled={isLoading}
+          disabled={isSubmitting}
         />
       </div>
 
@@ -66,10 +65,10 @@ export function PlayerForm() {
 
       <div className="flex justify-between pt-4">
         <Link href="/players" passHref>
-          <Button variant="outline" disabled={isLoading}>キャンセル</Button>
+          <Button variant="outline" disabled={isSubmitting}>キャンセル</Button>
         </Link>
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "登録中..." : "登録する"}
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "登録中..." : "登録する"}
         </Button>
       </div>
     </form>

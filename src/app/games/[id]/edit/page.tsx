@@ -6,9 +6,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { PlusCircle, Trash2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { Player, Game, GameResult } from "@/types";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { Player } from "@/types";
 import { useRouter } from "next/navigation";
 
 // 半荘の型定義
@@ -122,9 +120,9 @@ export default function EditGamePage({ params }: { params: { id: string } }) {
 
         if (playersError) throw playersError;
         setPlayers(playersData || []);
-      } catch (err: any) {
+      } catch (err: Error | unknown) {
         console.error("データ取得エラー:", err);
-        setErrorMessage(err.message || "データの取得中にエラーが発生しました");
+        setErrorMessage(err instanceof Error ? err.message : "データの取得中にエラーが発生しました");
       } finally {
         setIsLoading(false);
       }
@@ -228,7 +226,7 @@ export default function EditGamePage({ params }: { params: { id: string } }) {
   };
 
   // 対局を更新する関数
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setIsSubmitting(true);
     setErrorMessage("");

@@ -6,10 +6,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Game, Player, GameResult } from "@/types";
+import { Game, Player } from "@/types";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
-import { Edit } from "lucide-react";
+import { PlusCircle, Trash2, Edit } from "lucide-react";
 
 // ゲーム一覧に表示するためのデータ型
 interface GameListItem extends Game {
@@ -65,9 +65,9 @@ export default function GamesPage() {
         }));
 
         setGames(gamesWithDetails);
-      } catch (err: any) {
+      } catch (err: Error | unknown) {
         console.error("ゲーム一覧取得エラー:", err);
-        setError(err.message || "ゲーム一覧の取得中にエラーが発生しました");
+        setError(err instanceof Error ? err.message : "ゲーム一覧の取得中にエラーが発生しました");
       } finally {
         setLoading(false);
       }
@@ -82,6 +82,23 @@ export default function GamesPage() {
       return format(new Date(dateString), 'yyyy年MM月dd日(E)', { locale: ja });
     } catch (e) {
       return dateString;
+    }
+  };
+
+  const handleDelete = async (gameId: string) => {
+    if (!confirm("この対局を削除してもよろしいですか？")) return;
+
+    try {
+      const { error: deleteError } = await supabase
+        .from("games")
+        .delete()
+        .eq("id", gameId);
+
+      if (deleteError) throw deleteError;
+
+      // ... existing code ...
+    } catch (error: Error | unknown) {
+      // ... existing code ...
     }
   };
 

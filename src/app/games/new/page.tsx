@@ -152,7 +152,7 @@ export default function NewGamePage() {
   };
 
   // 対局を登録する関数
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setIsSubmitting(true);
     setErrorMessage("");

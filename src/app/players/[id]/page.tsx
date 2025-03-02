@@ -1,10 +1,16 @@
+'use client';
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { Player, Game } from "@/types";
+import { format } from "date-fns";
+import { ja } from "date-fns/locale";
+import { ArrowLeft, Edit } from "lucide-react";
 import { notFound } from "next/navigation";
-import { Player, GameResult } from "@/types";
 
 // プレイヤー情報を取得する関数
 async function getPlayer(id: string): Promise<Player | null> {
@@ -27,18 +33,11 @@ async function getPlayerResults(playerId: string): Promise<any[]> {
   const { data, error } = await supabase
     .from("game_results")
     .select(`
-      id,
-      rank,
-      score,
-      point,
-      games:game_id (
-        id,
-        date,
-        venue
-      )
+      *,
+      games:games(*)
     `)
     .eq("player_id", playerId)
-    .order("created_at", { ascending: false });
+    .order("games.date", { ascending: false });
 
   if (error) {
     console.error("対局結果取得エラー:", error);
@@ -76,13 +75,12 @@ export default async function PlayerDetailPage(props: PageProps) {
   const playerId = params.id;
 
   const player = await getPlayer(playerId);
+  const gameResults = await getPlayerResults(playerId);
+  const stats = await getPlayerStats(playerId);
 
   if (!player) {
     notFound();
   }
-
-  const results = await getPlayerResults(player.id);
-  const stats = await getPlayerStats(player.id);
 
   return (
     <div className="space-y-6">
@@ -173,14 +171,14 @@ export default async function PlayerDetailPage(props: PageProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {results.length === 0 ? (
+              {gameResults.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
                     対局記録がありません
                   </TableCell>
                 </TableRow>
               ) : (
-                results.map((result) => (
+                gameResults.map((result) => (
                   <TableRow key={result.id}>
                     <TableCell>{new Date(result.games.date).toLocaleDateString("ja-JP")}</TableCell>
                     <TableCell>{result.games.venue || "-"}</TableCell>

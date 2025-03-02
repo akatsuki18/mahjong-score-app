@@ -66,9 +66,9 @@ export default function GameDetailPage({ params }: { params: { id: string } }) {
         });
 
         setHansoResults(groupedResults);
-      } catch (err: any) {
+      } catch (err: Error | unknown) {
         console.error("ゲーム詳細取得エラー:", err);
-        setError(err.message || "ゲーム詳細の取得中にエラーが発生しました");
+        setError(err instanceof Error ? err.message : "ゲーム詳細の取得中にエラーが発生しました");
       } finally {
         setLoading(false);
       }
@@ -81,7 +81,7 @@ export default function GameDetailPage({ params }: { params: { id: string } }) {
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), 'yyyy年MM月dd日(E)', { locale: ja });
-    } catch (e) {
+    } catch (_) {
       return dateString;
     }
   };
