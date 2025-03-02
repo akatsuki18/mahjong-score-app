@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
+import { PlayerScoreChart } from "@/components/PlayerScoreChart";
 
 // ダッシュボードのデータ型
 interface DashboardData {
@@ -120,6 +121,44 @@ export default function Home() {
           };
         }
 
+        // 全プレイヤーの得点合計を取得
+        const { data: allPlayersData } = await supabase
+          .from('players')
+          .select('id, name');
+
+        let playerTotals: {
+          id: string;
+          name: string;
+          total_points: number;
+          games_played: number;
+        }[] = [];
+
+        if (allPlayersData && allPlayersData.length > 0) {
+          // 各プレイヤーの対局結果を取得
+          const playerPromises = allPlayersData.map(async (player) => {
+            const { data: resultsData } = await supabase
+              .from('game_results')
+              .select('score')
+              .eq('player_id', player.id);
+
+            const total_points = resultsData && resultsData.length > 0
+              ? resultsData.reduce((sum, item) => sum + item.score, 0)
+              : 0;
+            const games_played = resultsData ? resultsData.length : 0;
+
+            return {
+              id: player.id,
+              name: player.name,
+              total_points,
+              games_played
+            };
+          });
+
+          playerTotals = await Promise.all(playerPromises);
+          // 合計得点でソート
+          playerTotals.sort((a, b) => b.total_points - a.total_points);
+        }
+
         // 今月の成績トッププレイヤーを取得
         const { data: topPlayersData } = await supabase
           .from('player_stats')
@@ -178,7 +217,7 @@ export default function Home() {
           totalPlayers: totalPlayers || 0,
           averageScore,
           highestScore,
-          topPlayers,
+          topPlayers: playerTotals.length > 0 ? playerTotals.slice(0, 5) : topPlayers,
           recentGames
         });
       } catch (error) {
@@ -251,6 +290,17 @@ export default function Home() {
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">平均得点</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{data.averageScore.toLocaleString()}</div>
+                  <p className="text-xs text-muted-foreground">
+                    全プレイヤー平均
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">最高得点</CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -266,48 +316,72 @@ export default function Home() {
               </Card>
             </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>成績トップ</CardTitle>
-                <CardDescription>
-                  成績上位プレイヤー
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {data.topPlayers.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>プレイヤー</TableHead>
-                        <TableHead className="text-right">対局数</TableHead>
-                        <TableHead className="text-right">合計ポイント</TableHead>
-                        <TableHead className="text-right">平均ポイント</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {data.topPlayers.map((player) => (
-                        <TableRow key={player.id}>
-                          <TableCell className="font-medium">
-                            <Link href={`/players/${player.id}`} className="hover:underline">
-                              {player.name}
-                            </Link>
-                          </TableCell>
-                          <TableCell className="text-right">{player.games_played}</TableCell>
-                          <TableCell className="text-right">{player.total_points}</TableCell>
-                          <TableCell className="text-right">
-                            {player.games_played > 0
-                              ? (player.total_points / player.games_played).toFixed(1)
-                              : '0.0'}
-                          </TableCell>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>成績トップ</CardTitle>
+                  <CardDescription>
+                    成績上位プレイヤー
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {data.topPlayers.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>プレイヤー</TableHead>
+                          <TableHead className="text-right">対局数</TableHead>
+                          <TableHead className="text-right">合計ポイント</TableHead>
+                          <TableHead className="text-right">平均ポイント</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <p className="text-sm text-muted-foreground">データがありません</p>
-                )}
-              </CardContent>
-            </Card>
+                      </TableHeader>
+                      <TableBody>
+                        {data.topPlayers.map((player) => (
+                          <TableRow key={player.id}>
+                            <TableCell className="font-medium">
+                              <Link href={`/players/${player.id}`} className="hover:underline">
+                                {player.name}
+                              </Link>
+                            </TableCell>
+                            <TableCell className="text-right">{player.games_played}</TableCell>
+                            <TableCell className="text-right">{player.total_points}</TableCell>
+                            <TableCell className="text-right">
+                              {player.games_played > 0
+                                ? (player.total_points / player.games_played).toFixed(1)
+                                : '0.0'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">データがありません</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle>プレイヤー別合計得点</CardTitle>
+                  <CardDescription>全対局の合計得点</CardDescription>
+                </CardHeader>
+                <CardContent className="h-[300px]">
+                  <PlayerScoreChart
+                    gameResults={data.topPlayers.length > 0 ? data.topPlayers.map(player => ({
+                      id: player.id,
+                      name: player.name,
+                      score: player.total_points,
+                      rank: 0 // ランクは表示用の色分けに使用
+                    })) : [
+                      { id: "dummy1", name: "プレイヤー1", score: 25000, rank: 0 },
+                      { id: "dummy2", name: "プレイヤー2", score: 20000, rank: 0 },
+                      { id: "dummy3", name: "プレイヤー3", score: 15000, rank: 0 },
+                      { id: "dummy4", name: "プレイヤー4", score: 10000, rank: 0 }
+                    ]}
+                  />
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="recent" className="space-y-4">
@@ -331,38 +405,51 @@ export default function Home() {
                             </Link>
                           </h3>
                         </div>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>プレイヤー</TableHead>
-                              <TableHead className="text-right">得点</TableHead>
-                              <TableHead className="text-right">順位</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {game.players.sort((a, b) => a.rank - b.rank).map((player) => (
-                              <TableRow key={`${game.id}-${player.id}`}>
-                                <TableCell>
-                                  <Link href={`/players/${player.id}`} className="hover:underline">
-                                    {player.name}
-                                  </Link>
-                                </TableCell>
-                                <TableCell className="text-right">{player.score.toLocaleString()}</TableCell>
-                                <TableCell className="text-right">
-                                  <span className={`
-                                    inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-medium
-                                    ${player.rank === 1 ? 'bg-amber-100 text-amber-800' :
-                                      player.rank === 2 ? 'bg-slate-100 text-slate-800' :
-                                      player.rank === 3 ? 'bg-orange-100 text-orange-800' :
-                                      'bg-gray-100 text-gray-800'}
-                                  `}>
-                                    {player.rank}
-                                  </span>
-                                </TableCell>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>プレイヤー</TableHead>
+                                <TableHead className="text-right">得点</TableHead>
+                                <TableHead className="text-right">順位</TableHead>
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                            </TableHeader>
+                            <TableBody>
+                              {game.players.sort((a, b) => a.rank - b.rank).map((player) => (
+                                <TableRow key={`${game.id}-${player.id}`}>
+                                  <TableCell>
+                                    <Link href={`/players/${player.id}`} className="hover:underline">
+                                      {player.name}
+                                    </Link>
+                                  </TableCell>
+                                  <TableCell className="text-right">{player.score.toLocaleString()}</TableCell>
+                                  <TableCell className="text-right">
+                                    <span className={`
+                                      inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-medium
+                                      ${player.rank === 1 ? 'bg-amber-100 text-amber-800' :
+                                        player.rank === 2 ? 'bg-slate-100 text-slate-800' :
+                                        player.rank === 3 ? 'bg-orange-100 text-orange-800' :
+                                        'bg-gray-100 text-gray-800'}
+                                    `}>
+                                      {player.rank}
+                                    </span>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                          <Card className="h-full">
+                            <CardHeader>
+                              <CardTitle className="text-base">{formatDate(game.date)}の結果</CardTitle>
+                              {game.venue && <CardDescription className="text-xs">会場: {game.venue}</CardDescription>}
+                            </CardHeader>
+                            <CardContent className="h-[240px]">
+                              <PlayerScoreChart
+                                gameResults={game.players}
+                              />
+                            </CardContent>
+                          </Card>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -414,6 +501,28 @@ export default function Home() {
                 ) : (
                   <p className="text-sm text-muted-foreground">データがありません</p>
                 )}
+              </CardContent>
+            </Card>
+
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle>プレイヤー別合計得点</CardTitle>
+                <CardDescription>全対局の合計得点</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <PlayerScoreChart
+                  gameResults={data.topPlayers.length > 0 ? data.topPlayers.map(player => ({
+                    id: player.id,
+                    name: player.name,
+                    score: player.total_points,
+                    rank: 0 // ランクは表示用の色分けに使用
+                  })) : [
+                    { id: "dummy1", name: "プレイヤー1", score: 25000, rank: 0 },
+                    { id: "dummy2", name: "プレイヤー2", score: 20000, rank: 0 },
+                    { id: "dummy3", name: "プレイヤー3", score: 15000, rank: 0 },
+                    { id: "dummy4", name: "プレイヤー4", score: 10000, rank: 0 }
+                  ]}
+                />
               </CardContent>
             </Card>
           </TabsContent>
