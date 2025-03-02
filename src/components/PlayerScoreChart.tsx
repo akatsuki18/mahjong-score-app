@@ -69,34 +69,28 @@ export function PlayerScoreChart({ gameResults, title = "対局結果", descript
   }, {} as ChartConfig);
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">{title}</CardTitle>
-        {description && <CardDescription className="text-xs">{description}</CardDescription>}
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip content={<ChartTooltipContent />} />
-              <Legend wrapperStyle={{ paddingTop: 10 }} />
-              {sortedResults.map((player) => (
-                <Bar
-                  key={player.id}
-                  dataKey={`player_${player.id}`}
-                  fill={getRankColor(player.rank)}
-                  name={player.name}
-                  radius={[4, 4, 0, 0]}
-                />
-              ))}
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartContainer>
-      </CardContent>
-    </Card>
+    <div className="w-full h-full">
+      <ChartContainer config={chartConfig}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="name" />
+            <YAxis width={40} />
+            <Tooltip content={<ChartTooltipContent />} />
+            <Legend wrapperStyle={{ paddingTop: 10, fontSize: '12px' }} />
+            {sortedResults.map((player) => (
+              <Bar
+                key={player.id}
+                dataKey={`player_${player.id}`}
+                fill={getRankColor(player.rank)}
+                name={player.name}
+                radius={[4, 4, 0, 0]}
+              />
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartContainer>
+    </div>
   )
 }
 
