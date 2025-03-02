@@ -89,19 +89,36 @@ export default function Home() {
           .from('game_results')
           .select(`
             score,
-            players(name),
-            games(date)
+            player_id,
+            game_id
           `)
           .order('score', { ascending: false })
-          .limit(1);
+          .limit(1)
+          .single();
 
-        const highestScore = highScoreData && highScoreData.length > 0
-          ? {
-              score: highScoreData[0].score,
-              playerName: highScoreData[0].players[0]?.name || '不明',
-              date: highScoreData[0].games[0]?.date || ''
-            }
-          : null;
+        let highestScore = null;
+
+        if (highScoreData) {
+          // プレイヤー情報を取得
+          const { data: playerData } = await supabase
+            .from('players')
+            .select('name')
+            .eq('id', highScoreData.player_id)
+            .single();
+
+          // 対局情報を取得
+          const { data: gameData } = await supabase
+            .from('games')
+            .select('date')
+            .eq('id', highScoreData.game_id)
+            .single();
+
+          highestScore = {
+            score: highScoreData.score,
+            playerName: playerData?.name || '不明',
+            date: gameData?.date || ''
+          };
+        }
 
         // 今月の成績トッププレイヤーを取得
         const { data: topPlayersData } = await supabase
