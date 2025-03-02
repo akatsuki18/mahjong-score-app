@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { PlusCircle, Trash2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Player } from "@/types";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
 // 半荘の型定義
 interface HansoData {
@@ -17,16 +17,10 @@ interface HansoData {
   };
 }
 
-// Next.js 15の型定義に合わせて修正
-type PageProps = {
-  params: {
-    id: string;
-  };
-}
-
-export default function EditGamePage({ params }: PageProps) {
+export default function EditGamePage() {
   const router = useRouter();
-  const gameId = params.id;
+  const params = useParams();
+  const gameId = params.id as string;
 
   // プレイヤー一覧を保持する状態
   const [players, setPlayers] = useState<Player[]>([]);
@@ -135,7 +129,9 @@ export default function EditGamePage({ params }: PageProps) {
       }
     }
 
-    fetchData();
+    if (gameId) {
+      fetchData();
+    }
   }, [gameId]);
 
   // プレイヤーの選択状態を切り替える

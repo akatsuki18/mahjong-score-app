@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Player } from "@/types";
 import { notFound } from "next/navigation";
+import { useParams } from "next/navigation";
 
 // プレイヤー情報を取得する関数
 async function getPlayer(id: string): Promise<Player | null> {
@@ -60,13 +61,6 @@ async function getPlayerStats(playerId: string): Promise<Record<string, unknown>
   return data;
 }
 
-// Next.js 15の型定義に合わせて修正
-type PageProps = {
-  params: {
-    id: string;
-  };
-}
-
 interface GameResult {
   id: string;
   player_id: string;
@@ -91,7 +85,10 @@ interface PlayerStats {
   fourth_place_rate: number;
 }
 
-export default function PlayerDetailPage(props: PageProps) {
+export default function PlayerDetailPage() {
+  const params = useParams();
+  const playerId = params.id as string;
+
   const [player, setPlayer] = useState<Player | null>(null);
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
   const [stats, setStats] = useState<PlayerStats | null>(null);
@@ -100,8 +97,6 @@ export default function PlayerDetailPage(props: PageProps) {
   useEffect(() => {
     async function loadData() {
       try {
-        const playerId = props.params.id;
-
         const playerData = await getPlayer(playerId);
         if (!playerData) {
           notFound();
@@ -121,8 +116,10 @@ export default function PlayerDetailPage(props: PageProps) {
       }
     }
 
-    loadData();
-  }, [props.params.id]);
+    if (playerId) {
+      loadData();
+    }
+  }, [playerId]);
 
   if (loading || !player) {
     return <div>読み込み中...</div>;

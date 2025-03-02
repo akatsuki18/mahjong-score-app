@@ -10,6 +10,7 @@ import { Game, GameResult, Player } from "@/types";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { ArrowLeft, Edit } from "lucide-react";
+import { useParams } from "next/navigation";
 
 // 結果表示用の型
 interface GameResultWithPlayer extends GameResult {
@@ -22,15 +23,9 @@ interface HansoResults {
   [hansoNumber: number]: GameResultWithPlayer[];
 }
 
-// Next.js 15の型定義に合わせて修正
-type PageProps = {
-  params: {
-    id: string;
-  };
-}
-
-export default function GameDetailPage(props: PageProps) {
-  const gameId = props.params.id;
+export default function GameDetailPage() {
+  const params = useParams();
+  const gameId = params.id as string;
 
   const [game, setGame] = useState<Game | null>(null);
   const [results, setResults] = useState<GameResultWithPlayer[]>([]);
@@ -85,7 +80,9 @@ export default function GameDetailPage(props: PageProps) {
       }
     }
 
-    fetchGameDetails();
+    if (gameId) {
+      fetchGameDetails();
+    }
   }, [gameId]);
 
   // 日付をフォーマットする関数
