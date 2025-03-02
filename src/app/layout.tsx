@@ -24,7 +24,7 @@ export default function RootLayout({
             {children}
           </main>
           <footer className="border-t py-4 text-center text-sm text-gray-500">
-            © {new Date().getFullYear()} 麻雀スコア管理アプリ
+            © {new Date().getFullYear()} ブラックあかつき
           </footer>
         </div>
       </body>

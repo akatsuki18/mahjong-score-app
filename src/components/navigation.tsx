@@ -14,7 +14,7 @@ export function Navigation() {
         {/* モバイル向けヘッダー */}
         <div className="md:hidden">
           <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="font-bold text-xl">麻雀スコア管理</Link>
+            <Link href="/" className="font-bold text-xl">ブラックあかつき</Link>
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="p-2 rounded-md hover:bg-gray-100"
@@ -54,7 +54,7 @@ export function Navigation() {
         {/* デスクトップ向けヘッダー */}
         <div className="hidden md:flex flex-col py-2">
           <div className="flex items-center justify-between">
-            <Link href="/" className="font-bold text-xl">麻雀スコア管理</Link>
+            <Link href="/" className="font-bold text-xl">ブラックあかつき</Link>
           </div>
           <div className="mt-2">
             <nav className="flex flex-wrap gap-2">
