@@ -52,23 +52,23 @@ export function Navigation() {
         </div>
 
         {/* デスクトップ向けヘッダー */}
-        <div className="hidden md:flex h-16 items-center justify-between">
-          <div className="flex items-center space-x-4">
+        <div className="hidden md:flex flex-col py-2">
+          <div className="flex items-center justify-between">
             <Link href="/" className="font-bold text-xl">麻雀スコア管理</Link>
           </div>
-          <div className="flex items-center space-x-4">
-            <nav className="flex items-center space-x-2">
+          <div className="mt-2">
+            <nav className="flex flex-wrap gap-2">
               <Link href="/" passHref>
-                <Button variant="ghost">ダッシュボード</Button>
+                <Button variant="ghost" size="sm">ダッシュボード</Button>
               </Link>
               <Link href="/players" passHref>
-                <Button variant="ghost">プレイヤー</Button>
+                <Button variant="ghost" size="sm">プレイヤー</Button>
               </Link>
               <Link href="/games" passHref>
-                <Button variant="ghost">対局記録</Button>
+                <Button variant="ghost" size="sm">対局記録</Button>
               </Link>
               <Link href="/stats" passHref>
-                <Button variant="ghost">統計</Button>
+                <Button variant="ghost" size="sm">統計</Button>
               </Link>
             </nav>
           </div>
