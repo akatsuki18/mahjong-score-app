@@ -242,9 +242,9 @@ export default function Home() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>プレイヤー</TableHead>
-                          <TableHead className="text-right">対局数</TableHead>
-                          <TableHead className="text-right">合計ポイント</TableHead>
-                          <TableHead className="text-right">平均ポイント</TableHead>
+                          <TableHead className="text-right">半荘数</TableHead>
+                          <TableHead className="text-right">合計得点</TableHead>
+                          <TableHead className="text-right">平均得点</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>

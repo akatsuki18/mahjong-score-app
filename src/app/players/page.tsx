@@ -85,8 +85,8 @@ export default async function PlayersPage() {
                 <TableHead>名前</TableHead>
                 <TableHead>半荘数</TableHead>
                 <TableHead>平均順位</TableHead>
-                <TableHead>平均ポイント</TableHead>
-                <TableHead>トータルポイント</TableHead>
+                <TableHead>平均得点</TableHead>
+                <TableHead>合計得点</TableHead>
                 <TableHead className="text-right">操作</TableHead>
               </TableRow>
             </TableHeader>
