@@ -24,6 +24,8 @@ interface DashboardData {
     id: string;
     name: string;
     total_points: number;
+    total_rank_points: number;
+    total_combined_score: number;
     games_played: number;
   }[];
 }
@@ -106,6 +108,8 @@ export default function Home() {
           id: string;
           name: string;
           total_points: number;
+          total_rank_points: number;
+          total_combined_score: number;
           games_played: number;
         }[] = [];
 
@@ -117,22 +121,34 @@ export default function Home() {
               .select('score')
               .eq('player_id', player.id);
 
+            // 日別順位点を取得
+            const { data: dailySummaries } = await supabase
+              .from('daily_summary')
+              .select('rank_point')
+              .eq('player_id', player.id);
+
             const total_points = resultsData && resultsData.length > 0
               ? resultsData.reduce((sum, item) => sum + item.score, 0)
               : 0;
+            const total_rank_points = dailySummaries && dailySummaries.length > 0
+              ? dailySummaries.reduce((sum, day) => sum + day.rank_point, 0)
+              : 0;
             const games_played = resultsData ? resultsData.length : 0;
+            const total_combined_score = total_points + total_rank_points;
 
             return {
               id: player.id,
               name: player.name,
               total_points,
+              total_rank_points,
+              total_combined_score,
               games_played
             };
           });
 
           playerTotals = await Promise.all(playerPromises);
-          // 合計得点でソート
-          playerTotals.sort((a, b) => b.total_points - a.total_points);
+          // 総合得点でソート
+          playerTotals.sort((a, b) => b.total_combined_score - a.total_combined_score);
         }
 
         // 今月の成績トッププレイヤーを取得
@@ -152,6 +168,8 @@ export default function Home() {
               id: item.players[0]?.id || '',
               name: item.players[0]?.name || '不明',
               total_points: item.total_points,
+              total_rank_points: 0,
+              total_combined_score: 0,
               games_played: item.games_played
             }))
           : [];
@@ -208,15 +226,15 @@ export default function Home() {
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
             <Card className="w-full overflow-hidden">
               <CardHeader>
-                <CardTitle>プレイヤー別合計得点</CardTitle>
-                <CardDescription>全対局の合計得点</CardDescription>
+                <CardTitle>総合得点</CardTitle>
+                <CardDescription>全対局の合計得点＋順位点</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px] w-full">
                 <PlayerScoreChart
                   gameResults={data.topPlayers.length > 0 ? data.topPlayers.map(player => ({
                     id: player.id,
                     name: player.name,
-                    score: player.total_points,
+                    score: player.total_combined_score,
                     rank: 0 // ランクは表示用の色分けに使用
                   })) : [
                     { id: "dummy1", name: "プレイヤー1", score: 25000, rank: 0 },
@@ -244,7 +262,8 @@ export default function Home() {
                           <TableHead>プレイヤー</TableHead>
                           <TableHead className="text-right">半荘数</TableHead>
                           <TableHead className="text-right">合計得点</TableHead>
-                          <TableHead className="text-right">平均得点</TableHead>
+                          <TableHead className="text-right">順位点</TableHead>
+                          <TableHead className="text-right">総合得点</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -256,12 +275,9 @@ export default function Home() {
                               </Link>
                             </TableCell>
                             <TableCell className="text-right">{player.games_played}</TableCell>
-                            <TableCell className="text-right">{player.total_points}</TableCell>
-                            <TableCell className="text-right">
-                              {player.games_played > 0
-                                ? (player.total_points / player.games_played).toFixed(1)
-                                : '0.0'}
-                            </TableCell>
+                            <TableCell className="text-right">{player.total_points.toLocaleString()}</TableCell>
+                            <TableCell className="text-right">{player.total_rank_points.toLocaleString()}</TableCell>
+                            <TableCell className="text-right">{player.total_combined_score.toLocaleString()}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
