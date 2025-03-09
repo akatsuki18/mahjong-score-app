@@ -112,43 +112,22 @@ export default function NewGamePage() {
 
   // 順位を計算する関数
   const calculateRanks = (scores: { [playerId: string]: number }): { [playerId: string]: number } => {
-    const playerIds = Object.keys(scores);
-    if (playerIds.length !== 4) return {};
-
-    // スコアの降順でプレイヤーIDをソート
-    const sortedPlayerIds = [...playerIds].sort((a, b) => scores[b] - scores[a]);
-
-    // 順位を割り当て（同点の場合は同じ順位）
+    const sortedPlayers = Object.entries(scores).sort((a, b) => b[1] - a[1]);
     const ranks: { [playerId: string]: number } = {};
+
     let currentRank = 1;
     let previousScore: number | null = null;
 
-    sortedPlayerIds.forEach((playerId, index) => {
-      if (previousScore !== null && scores[playerId] !== previousScore) {
+    sortedPlayers.forEach(([playerId, score], index) => {
+      if (previousScore !== null && score < previousScore) {
         currentRank = index + 1;
       }
+
       ranks[playerId] = currentRank;
       previousScore = scores[playerId];
     });
 
     return ranks;
-  };
-
-  // ポイントを計算する関数
-  const calculatePoints = (ranks: { [playerId: string]: number }): { [playerId: string]: number } => {
-    const pointTable: { [key: number]: number } = {
-      1: 12,
-      2: 4,
-      3: -4,
-      4: -12
-    };
-
-    const points: { [playerId: string]: number } = {};
-    Object.entries(ranks).forEach(([playerId, rank]) => {
-      points[playerId] = pointTable[rank] || 0;
-    });
-
-    return points;
   };
 
   // 対局を登録する関数
@@ -202,8 +181,6 @@ export default function NewGamePage() {
       hansoList.forEach((hanso, hansoIndex) => {
         // 順位を計算
         const ranks = calculateRanks(hanso.scores);
-        // ポイントを計算
-        const points = calculatePoints(ranks);
 
         // 各プレイヤーの結果を作成
         const gameResults = selectedPlayerIds.map(playerId => ({
@@ -211,7 +188,7 @@ export default function NewGamePage() {
           player_id: playerId,
           rank: ranks[playerId],
           score: hanso.scores[playerId],
-          point: points[playerId],
+          point: 0, // ポイント計算は不要になったため常に0を設定
           hanso_number: hansoIndex + 1
         }));
 

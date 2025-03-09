@@ -91,25 +91,58 @@ async function getPlayerResults(playerId: string): Promise<GameResult[]> {
 
 // プレイヤーの日別集計を取得する関数
 async function getPlayerDailySummary(playerId: string): Promise<DailySummary[]> {
-  const { data, error } = await supabase
+  // 日別集計データを取得
+  const { data: summaryData, error: summaryError } = await supabase
     .from("daily_summary")
     .select("*")
     .eq("player_id", playerId)
     .order("date", { ascending: false });
 
-  if (error) {
-    console.error("日別集計取得エラー:", error);
+  if (summaryError) {
+    console.error("日別集計取得エラー:", summaryError);
     return [];
   }
 
-  return data || [];
+  if (!summaryData || summaryData.length === 0) {
+    return [];
+  }
+
+  // 各日付ごとのゲーム結果を取得
+  const dailyScores: { [date: string]: number } = {};
+
+  // プレイヤーの全ゲーム結果を取得
+  const { data: resultsData, error: resultsError } = await supabase
+    .from("game_results")
+    .select("*, games(date)")
+    .eq("player_id", playerId);
+
+  if (resultsError) {
+    console.error("対局結果取得エラー:", resultsError);
+  } else if (resultsData && resultsData.length > 0) {
+    // 各結果を日付ごとにグループ化
+    resultsData.forEach(result => {
+      if (result.games && result.games.date) {
+        const date = result.games.date;
+        if (!dailyScores[date]) {
+          dailyScores[date] = 0;
+        }
+        dailyScores[date] += result.score;
+      }
+    });
+  }
+
+  // 日別集計データにスコア合計を追加
+  return summaryData.map(summary => ({
+    ...summary,
+    // 該当日のスコア合計があれば使用、なければ既存のtotal_pointsを使用
+    total_points: dailyScores[summary.date] !== undefined ? dailyScores[summary.date] : summary.total_points
+  }));
 }
 
 interface PlayerStats {
   games_played: number;
   average_rank: number;
-  average_points: number;
-  total_points: number;
+  total_score: number;
   first_place_rate: number;
   fourth_place_rate: number;
 }
@@ -143,9 +176,8 @@ export default function PlayerDetailPage() {
         // 統計情報を計算
         if (resultsData && resultsData.length > 0) {
           const games_played = resultsData.length;
-          const total_points = resultsData.reduce((sum, result) => sum + result.score, 0);
+          const total_score = resultsData.reduce((sum, result) => sum + result.score, 0);
           const average_rank = resultsData.reduce((sum, result) => sum + result.rank, 0) / games_played;
-          const average_points = total_points / games_played;
           const first_place_count = resultsData.filter(result => result.rank === 1).length;
           const fourth_place_count = resultsData.filter(result => result.rank === 4).length;
           const first_place_rate = (first_place_count / games_played) * 100;
@@ -154,8 +186,7 @@ export default function PlayerDetailPage() {
           setStats({
             games_played,
             average_rank,
-            average_points,
-            total_points,
+            total_score,
             first_place_rate,
             fourth_place_rate
           });
@@ -225,12 +256,8 @@ export default function PlayerDetailPage() {
                   <dd>{stats.average_rank.toFixed(1)}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="font-medium">平均得点:</dt>
-                  <dd>{stats.average_points.toLocaleString()}</dd>
-                </div>
-                <div className="flex justify-between">
                   <dt className="font-medium">合計得点:</dt>
-                  <dd>{stats.total_points.toLocaleString()}</dd>
+                  <dd>{stats.total_score.toLocaleString()}</dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="font-medium">トップ率:</dt>
@@ -267,7 +294,7 @@ export default function PlayerDetailPage() {
                   <TableHead>日付</TableHead>
                   <TableHead>半荘数</TableHead>
                   <TableHead>平均順位</TableHead>
-                  <TableHead>合計ポイント</TableHead>
+                  <TableHead>合計スコア</TableHead>
                   <TableHead>日別順位</TableHead>
                   <TableHead>順位点</TableHead>
                 </TableRow>
@@ -282,7 +309,7 @@ export default function PlayerDetailPage() {
                     <TableCell>
                       {summary.rank_point === 10 ? "1位" :
                        summary.rank_point === 6 ? "2位" :
-                       summary.rank_point === 3 ? "3位" : "4位以下"}
+                       summary.rank_point === 3 ? "3位" : "4位"}
                     </TableCell>
                     <TableCell>{summary.rank_point}点</TableCell>
                   </TableRow>
@@ -308,14 +335,13 @@ export default function PlayerDetailPage() {
                 <TableHead>場所</TableHead>
                 <TableHead>順位</TableHead>
                 <TableHead>得点</TableHead>
-                <TableHead>ポイント</TableHead>
                 <TableHead className="text-right">詳細</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {gameResults.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
                     対局記録がありません
                   </TableCell>
                 </TableRow>
@@ -326,7 +352,6 @@ export default function PlayerDetailPage() {
                     <TableCell>{result.game?.venue || "-"}</TableCell>
                     <TableCell>{result.rank}位</TableCell>
                     <TableCell>{result.score.toLocaleString()}</TableCell>
-                    <TableCell>{result.point > 0 ? `+${result.point}` : result.point}</TableCell>
                     <TableCell className="text-right">
                       <Link href={`/games/${result.game_id}`} passHref>
                         <Button variant="ghost" size="sm">詳細</Button>
