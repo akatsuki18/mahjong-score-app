@@ -14,6 +14,7 @@ interface PlayerStats {
   first_place_rate: number;
   fourth_place_rate: number;
   total_rank_points: number; // 順位点の合計
+  total_combined_score: number; // 総合得点（合計得点 + 順位点）
 }
 
 // プレイヤーの統計情報を取得する関数
@@ -60,7 +61,8 @@ async function getPlayersStats(): Promise<PlayerStats[]> {
         total_points: 0,
         first_place_rate: 0,
         fourth_place_rate: 0,
-        total_rank_points
+        total_rank_points,
+        total_combined_score: 0
       };
     }
 
@@ -82,7 +84,8 @@ async function getPlayersStats(): Promise<PlayerStats[]> {
       total_points,
       first_place_rate,
       fourth_place_rate,
-      total_rank_points
+      total_rank_points,
+      total_combined_score: total_points + total_rank_points
     };
   });
 
@@ -94,6 +97,9 @@ async function getPlayersStats(): Promise<PlayerStats[]> {
 
 export default async function StatisticsPage() {
   const playersStats = await getPlayersStats();
+
+  // 総合得点でソート
+  const sortedByCombinedScore = [...playersStats].sort((a, b) => b.total_combined_score - a.total_combined_score);
 
   // トータルポイントでソート
   const sortedByTotalPoints = [...playersStats].sort((a, b) => b.total_points - a.total_points);
@@ -115,6 +121,100 @@ export default async function StatisticsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">統計情報</h1>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>総合ランキング</CardTitle>
+          <CardDescription>
+            全プレイヤーの総合得点（合計得点＋順位点）ランキングです
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>順位</TableHead>
+                <TableHead>プレイヤー</TableHead>
+                <TableHead>半荘数</TableHead>
+                <TableHead>平均順位</TableHead>
+                <TableHead>合計得点</TableHead>
+                <TableHead>順位点</TableHead>
+                <TableHead>総合得点</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedByCombinedScore.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                    データがありません
+                  </TableCell>
+                </TableRow>
+              ) : (
+                sortedByCombinedScore.map((stat, index) => (
+                  <TableRow key={stat.player_id}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell className="font-medium">
+                      <Link href={`/players/${stat.player_id}`} className="hover:underline">
+                        {stat.player_name}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{stat.games_played}</TableCell>
+                    <TableCell>{stat.average_rank.toFixed(1)}</TableCell>
+                    <TableCell>{stat.total_points.toLocaleString()}</TableCell>
+                    <TableCell>{stat.total_rank_points}点</TableCell>
+                    <TableCell>{stat.total_combined_score.toLocaleString()}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>合計得点ランキング</CardTitle>
+          <CardDescription>
+            全プレイヤーの合計得点ランキングです
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>順位</TableHead>
+                <TableHead>プレイヤー</TableHead>
+                <TableHead>半荘数</TableHead>
+                <TableHead>平均順位</TableHead>
+                <TableHead>合計得点</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedByTotalPoints.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                    データがありません
+                  </TableCell>
+                </TableRow>
+              ) : (
+                sortedByTotalPoints.map((stat, index) => (
+                  <TableRow key={stat.player_id}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell className="font-medium">
+                      <Link href={`/players/${stat.player_id}`} className="hover:underline">
+                        {stat.player_name}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{stat.games_played}</TableCell>
+                    <TableCell>{stat.average_rank.toFixed(1)}</TableCell>
+                    <TableCell>{stat.total_points.toLocaleString()}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -153,51 +253,6 @@ export default async function StatisticsPage() {
                     <TableCell>{stat.games_played}</TableCell>
                     <TableCell>{stat.average_rank.toFixed(1)}</TableCell>
                     <TableCell>{stat.total_rank_points}点</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>トータルポイントランキング</CardTitle>
-          <CardDescription>
-            全プレイヤーのトータルポイントランキングです
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>順位</TableHead>
-                <TableHead>プレイヤー</TableHead>
-                <TableHead>半荘数</TableHead>
-                <TableHead>平均順位</TableHead>
-                <TableHead>トータルポイント</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedByTotalPoints.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                    データがありません
-                  </TableCell>
-                </TableRow>
-              ) : (
-                sortedByTotalPoints.map((stat, index) => (
-                  <TableRow key={stat.player_id}>
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell className="font-medium">
-                      <Link href={`/players/${stat.player_id}`} className="hover:underline">
-                        {stat.player_name}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{stat.games_played}</TableCell>
-                    <TableCell>{stat.average_rank.toFixed(1)}</TableCell>
-                    <TableCell>{stat.total_points.toLocaleString()}</TableCell>
                   </TableRow>
                 ))
               )}
