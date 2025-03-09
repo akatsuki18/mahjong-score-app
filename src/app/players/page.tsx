@@ -10,6 +10,7 @@ interface PlayerStats {
   average_rank: number;
   average_points: number;
   total_points: number;
+  total_rank_points: number; // 合計順位点
 }
 
 // プレイヤー一覧を取得する関数
@@ -48,11 +49,23 @@ async function getPlayerStats(playerId: string): Promise<PlayerStats | null> {
   const average_rank = data.reduce((sum, result) => sum + result.rank, 0) / games_played;
   const average_points = total_points / games_played;
 
+  // 日別集計から順位点を取得
+  const { data: dailySummaries, error: summaryError } = await supabase
+    .from("daily_summary")
+    .select("rank_point")
+    .eq("player_id", playerId);
+
+  let total_rank_points = 0;
+  if (!summaryError && dailySummaries && dailySummaries.length > 0) {
+    total_rank_points = dailySummaries.reduce((sum, day) => sum + day.rank_point, 0);
+  }
+
   return {
     games_played,
     average_rank,
     average_points,
-    total_points
+    total_points,
+    total_rank_points
   };
 }
 
@@ -87,13 +100,14 @@ export default async function PlayersPage() {
                 <TableHead>平均順位</TableHead>
                 <TableHead>平均得点</TableHead>
                 <TableHead>合計得点</TableHead>
+                <TableHead>合計順位点</TableHead>
                 <TableHead className="text-right">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {players.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
                     プレイヤーが登録されていません
                   </TableCell>
                 </TableRow>
@@ -107,6 +121,7 @@ export default async function PlayersPage() {
                       <TableCell>{stats?.average_rank?.toFixed(1) || '-'}</TableCell>
                       <TableCell>{stats?.average_points?.toLocaleString() || 0}</TableCell>
                       <TableCell>{stats?.total_points?.toLocaleString() || 0}</TableCell>
+                      <TableCell>{stats?.total_rank_points || 0}点</TableCell>
                       <TableCell className="text-right">
                         <Link href={`/players/${player.id}`} passHref>
                           <Button variant="ghost" size="sm">詳細</Button>
