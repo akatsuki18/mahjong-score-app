@@ -13,6 +13,7 @@ interface PlayerStats {
   total_points: number;
   first_place_rate: number;
   fourth_place_rate: number;
+  total_rank_points: number; // 順位点の合計
 }
 
 // プレイヤーの統計情報を取得する関数
@@ -38,6 +39,17 @@ async function getPlayersStats(): Promise<PlayerStats[]> {
       .select("*")
       .eq("player_id", player.id);
 
+    // 日別順位点を取得
+    const { data: dailySummaries, error: dailySummaryError } = await supabase
+      .from("daily_summary")
+      .select("rank_point")
+      .eq("player_id", player.id);
+
+    // 順位点の合計を計算
+    const total_rank_points = dailySummaries && dailySummaries.length > 0
+      ? dailySummaries.reduce((sum, day) => sum + day.rank_point, 0)
+      : 0;
+
     if (resultsError || !results || results.length === 0) {
       return {
         player_id: player.id,
@@ -47,7 +59,8 @@ async function getPlayersStats(): Promise<PlayerStats[]> {
         average_points: 0,
         total_points: 0,
         first_place_rate: 0,
-        fourth_place_rate: 0
+        fourth_place_rate: 0,
+        total_rank_points
       };
     }
 
@@ -68,7 +81,8 @@ async function getPlayersStats(): Promise<PlayerStats[]> {
       average_points,
       total_points,
       first_place_rate,
-      fourth_place_rate
+      fourth_place_rate,
+      total_rank_points
     };
   });
 
@@ -93,11 +107,59 @@ export default async function StatisticsPage() {
   // ラス率でソート
   const sortedByFourthPlaceRate = [...playersStats].sort((a, b) => a.fourth_place_rate - b.fourth_place_rate);
 
+  // 順位点でソート
+  const sortedByRankPoints = [...playersStats].sort((a, b) => b.total_rank_points - a.total_rank_points);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">統計情報</h1>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>順位点ランキング</CardTitle>
+          <CardDescription>
+            全プレイヤーの順位点ランキングです（日別1位: 10点, 2位: 6点, 3位: 3点）
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>順位</TableHead>
+                <TableHead>プレイヤー</TableHead>
+                <TableHead>半荘数</TableHead>
+                <TableHead>平均順位</TableHead>
+                <TableHead>順位点</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedByRankPoints.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                    データがありません
+                  </TableCell>
+                </TableRow>
+              ) : (
+                sortedByRankPoints.map((stat, index) => (
+                  <TableRow key={stat.player_id}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell className="font-medium">
+                      <Link href={`/players/${stat.player_id}`} className="hover:underline">
+                        {stat.player_name}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{stat.games_played}</TableCell>
+                    <TableCell>{stat.average_rank.toFixed(1)}</TableCell>
+                    <TableCell>{stat.total_rank_points}点</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

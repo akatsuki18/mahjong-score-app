@@ -61,19 +61,40 @@ GROUP BY
 
 -- 日別集計ビュー (SECURITY INVOKERがデフォルト)
 CREATE OR REPLACE VIEW daily_summary AS
+WITH daily_ranks AS (
+  SELECT
+    g.date,
+    gr.player_id,
+    SUM(gr.point) AS total_points,
+    ROW_NUMBER() OVER (PARTITION BY g.date ORDER BY SUM(gr.point) DESC) AS daily_rank
+  FROM
+    games g
+  JOIN
+    game_results gr ON g.id = gr.game_id
+  GROUP BY
+    g.date, gr.player_id
+)
 SELECT
   g.date,
   gr.player_id,
   COUNT(DISTINCT g.id) AS games_played,
   SUM(gr.point) AS total_points,
   CASE WHEN COUNT(gr.id) > 0 THEN ROUND(AVG(gr.rank), 2) ELSE 0 END AS average_rank,
-  SUM(CASE WHEN gr.rank = 1 THEN 1 ELSE 0 END) AS first_place_count
+  SUM(CASE WHEN gr.rank = 1 THEN 1 ELSE 0 END) AS first_place_count,
+  CASE
+    WHEN dr.daily_rank = 1 THEN 10
+    WHEN dr.daily_rank = 2 THEN 6
+    WHEN dr.daily_rank = 3 THEN 3
+    ELSE 0
+  END AS rank_point
 FROM
   games g
 JOIN
   game_results gr ON g.id = gr.game_id
+JOIN
+  daily_ranks dr ON g.date = dr.date AND gr.player_id = dr.player_id
 GROUP BY
-  g.date, gr.player_id;
+  g.date, gr.player_id, dr.daily_rank;
 
 -- RLSポリシーの作成
 -- すべてのユーザーが読み取り可能

@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Player } from "@/types";
+import { Player, DailySummary } from "@/types";
 import { notFound } from "next/navigation";
 import { useParams } from "next/navigation";
 
@@ -89,6 +89,22 @@ async function getPlayerResults(playerId: string): Promise<GameResult[]> {
   }) as GameResult[];
 }
 
+// プレイヤーの日別集計を取得する関数
+async function getPlayerDailySummary(playerId: string): Promise<DailySummary[]> {
+  const { data, error } = await supabase
+    .from("daily_summary")
+    .select("*")
+    .eq("player_id", playerId)
+    .order("date", { ascending: false });
+
+  if (error) {
+    console.error("日別集計取得エラー:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
 interface PlayerStats {
   games_played: number;
   average_rank: number;
@@ -104,6 +120,7 @@ export default function PlayerDetailPage() {
 
   const [player, setPlayer] = useState<Player | null>(null);
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
+  const [dailySummaries, setDailySummaries] = useState<DailySummary[]>([]);
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -117,8 +134,11 @@ export default function PlayerDetailPage() {
         }
 
         const resultsData = await getPlayerResults(playerId);
+        const dailySummaryData = await getPlayerDailySummary(playerId);
+
         setPlayer(playerData);
         setGameResults(resultsData);
+        setDailySummaries(dailySummaryData);
 
         // 統計情報を計算
         if (resultsData && resultsData.length > 0) {
@@ -155,6 +175,9 @@ export default function PlayerDetailPage() {
   if (loading || !player) {
     return <div>読み込み中...</div>;
   }
+
+  // 順位点の合計を計算
+  const totalRankPoints = dailySummaries.reduce((sum, day) => sum + day.rank_point, 0);
 
   return (
     <div className="space-y-6">
@@ -217,6 +240,10 @@ export default function PlayerDetailPage() {
                   <dt className="font-medium">ラス率:</dt>
                   <dd>{stats.fourth_place_rate.toFixed(1)}%</dd>
                 </div>
+                <div className="flex justify-between">
+                  <dt className="font-medium">合計順位点:</dt>
+                  <dd>{totalRankPoints}点</dd>
+                </div>
               </dl>
             ) : (
               <p className="text-sm text-muted-foreground">統計情報がありません</p>
@@ -224,6 +251,47 @@ export default function PlayerDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {dailySummaries.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>日別順位点</CardTitle>
+            <CardDescription>
+              日ごとの順位に基づく順位点（1位: 10点, 2位: 6点, 3位: 3点）
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>日付</TableHead>
+                  <TableHead>半荘数</TableHead>
+                  <TableHead>平均順位</TableHead>
+                  <TableHead>合計ポイント</TableHead>
+                  <TableHead>日別順位</TableHead>
+                  <TableHead>順位点</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {dailySummaries.map((summary) => (
+                  <TableRow key={summary.date}>
+                    <TableCell>{new Date(summary.date).toLocaleDateString("ja-JP")}</TableCell>
+                    <TableCell>{summary.games_played}</TableCell>
+                    <TableCell>{summary.average_rank.toFixed(1)}</TableCell>
+                    <TableCell>{summary.total_points}</TableCell>
+                    <TableCell>
+                      {summary.rank_point === 10 ? "1位" :
+                       summary.rank_point === 6 ? "2位" :
+                       summary.rank_point === 3 ? "3位" : "4位以下"}
+                    </TableCell>
+                    <TableCell>{summary.rank_point}点</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

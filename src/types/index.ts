@@ -32,6 +32,7 @@ export interface DailySummary {
   total_points: number;
   average_rank: number;
   first_place_count: number;
+  rank_point: number; // 日別順位点（1位: 10点, 2位: 6点, 3位: 3点）
 }
 
 // プレイヤー統計の型定義
