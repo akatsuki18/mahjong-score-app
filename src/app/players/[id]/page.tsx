@@ -145,6 +145,7 @@ interface PlayerStats {
   total_score: number;
   first_place_rate: number;
   fourth_place_rate: number;
+  total_combined_score: number;
 }
 
 export default function PlayerDetailPage() {
@@ -183,12 +184,19 @@ export default function PlayerDetailPage() {
           const first_place_rate = (first_place_count / games_played) * 100;
           const fourth_place_rate = (fourth_place_count / games_played) * 100;
 
+          // 順位点の合計を計算
+          const total_rank_points = dailySummaryData.reduce((sum, day) => sum + day.rank_point, 0);
+
+          // 総合得点（合計得点 + 合計順位点）を計算
+          const total_combined_score = total_score + total_rank_points;
+
           setStats({
             games_played,
             average_rank,
             total_score,
             first_place_rate,
-            fourth_place_rate
+            fourth_place_rate,
+            total_combined_score
           });
         }
       } catch (error) {
@@ -203,12 +211,8 @@ export default function PlayerDetailPage() {
     }
   }, [playerId]);
 
-  if (loading || !player) {
-    return <div>読み込み中...</div>;
-  }
-
-  // 順位点の合計を計算
-  const totalRankPoints = dailySummaries.reduce((sum, day) => sum + day.rank_point, 0);
+  if (loading) return <div className="text-center py-10">読み込み中...</div>;
+  if (!player) return <div className="text-center py-10">プレイヤーが見つかりません</div>;
 
   return (
     <div className="space-y-6">
@@ -260,16 +264,20 @@ export default function PlayerDetailPage() {
                   <dd>{stats.total_score.toLocaleString()}</dd>
                 </div>
                 <div className="flex justify-between">
+                  <dt className="font-medium">合計順位点:</dt>
+                  <dd>{dailySummaries.reduce((sum, day) => sum + day.rank_point, 0)}点</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="font-medium">総合得点:</dt>
+                  <dd>{stats.total_combined_score.toLocaleString()}</dd>
+                </div>
+                <div className="flex justify-between">
                   <dt className="font-medium">トップ率:</dt>
                   <dd>{stats.first_place_rate.toFixed(1)}%</dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="font-medium">ラス率:</dt>
                   <dd>{stats.fourth_place_rate.toFixed(1)}%</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="font-medium">合計順位点:</dt>
-                  <dd>{totalRankPoints}点</dd>
                 </div>
               </dl>
             ) : (

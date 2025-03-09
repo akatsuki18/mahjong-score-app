@@ -11,6 +11,7 @@ interface PlayerStats {
   average_points: number;
   total_points: number;
   total_rank_points: number; // 合計順位点
+  total_combined_score: number; // 総合得点（合計得点 + 合計順位点）
 }
 
 // プレイヤー一覧を取得する関数
@@ -60,12 +61,16 @@ async function getPlayerStats(playerId: string): Promise<PlayerStats | null> {
     total_rank_points = dailySummaries.reduce((sum, day) => sum + day.rank_point, 0);
   }
 
+  // 総合得点（合計得点 + 合計順位点）を計算
+  const total_combined_score = total_points + total_rank_points;
+
   return {
     games_played,
     average_rank,
     average_points,
     total_points,
-    total_rank_points
+    total_rank_points,
+    total_combined_score
   };
 }
 
@@ -101,13 +106,14 @@ export default async function PlayersPage() {
                 <TableHead>平均得点</TableHead>
                 <TableHead>合計得点</TableHead>
                 <TableHead>合計順位点</TableHead>
+                <TableHead>総合得点</TableHead>
                 <TableHead className="text-right">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {players.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                     プレイヤーが登録されていません
                   </TableCell>
                 </TableRow>
@@ -122,6 +128,7 @@ export default async function PlayersPage() {
                       <TableCell>{stats?.average_points?.toLocaleString() || 0}</TableCell>
                       <TableCell>{stats?.total_points?.toLocaleString() || 0}</TableCell>
                       <TableCell>{stats?.total_rank_points || 0}点</TableCell>
+                      <TableCell>{stats?.total_combined_score?.toLocaleString() || 0}</TableCell>
                       <TableCell className="text-right">
                         <Link href={`/players/${player.id}`} passHref>
                           <Button variant="ghost" size="sm">詳細</Button>
