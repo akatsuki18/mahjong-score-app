@@ -72,11 +72,11 @@ export function PlayerScoreChart({ gameResults, title = "対局結果", descript
     <div className="w-full h-full">
       <ChartContainer config={chartConfig}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
+          <BarChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }} barGap={8}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="name" />
-            <YAxis width={40} />
-            <Tooltip content={<ChartTooltipContent />} />
+            <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
+            <YAxis width={40} tickLine={false} axisLine={false} />
+            <Tooltip content={<ChartTooltipContent />} cursor={false} />
             <Legend wrapperStyle={{ paddingTop: 10, fontSize: '12px' }} />
             {sortedResults.map((player) => (
               <Bar
@@ -85,6 +85,7 @@ export function PlayerScoreChart({ gameResults, title = "対局結果", descript
                 fill={getRankColor(player.rank)}
                 name={player.name}
                 radius={[4, 4, 0, 0]}
+                barSize={40}
               />
             ))}
           </BarChart>
