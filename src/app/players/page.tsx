@@ -80,6 +80,18 @@ export default async function PlayersPage() {
     players.map(player => getPlayerStats(player.id))
   );
 
+  // プレイヤーと統計情報を組み合わせて、総合得点でソート
+  const sortedPlayers = players
+    .map((player, index) => ({
+      player,
+      stats: playerStats[index]
+    }))
+    .sort((a, b) => {
+      const scoreA = a.stats?.total_combined_score || 0;
+      const scoreB = b.stats?.total_combined_score || 0;
+      return scoreB - scoreA;
+    });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -93,7 +105,7 @@ export default async function PlayersPage() {
         <CardHeader>
           <CardTitle>登録プレイヤー</CardTitle>
           <CardDescription>
-            システムに登録されているプレイヤーの一覧です
+            システムに登録されているプレイヤーの一覧です（総合得点順）
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -111,32 +123,29 @@ export default async function PlayersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {players.length === 0 ? (
+              {sortedPlayers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                     プレイヤーが登録されていません
                   </TableCell>
                 </TableRow>
               ) : (
-                players.map((player, index) => {
-                  const stats = playerStats[index];
-                  return (
-                    <TableRow key={player.id}>
-                      <TableCell className="font-medium">{player.name}</TableCell>
-                      <TableCell>{stats?.games_played || 0}</TableCell>
-                      <TableCell>{stats?.average_rank?.toFixed(1) || '-'}</TableCell>
-                      <TableCell>{stats?.average_points?.toLocaleString() || 0}</TableCell>
-                      <TableCell>{stats?.total_points?.toLocaleString() || 0}</TableCell>
-                      <TableCell>{stats?.total_rank_points || 0}点</TableCell>
-                      <TableCell>{stats?.total_combined_score?.toLocaleString() || 0}</TableCell>
-                      <TableCell className="text-right">
-                        <Link href={`/players/${player.id}`} passHref>
-                          <Button variant="ghost" size="sm">詳細</Button>
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
+                sortedPlayers.map(({ player, stats }) => (
+                  <TableRow key={player.id}>
+                    <TableCell className="font-medium">{player.name}</TableCell>
+                    <TableCell>{stats?.games_played || 0}</TableCell>
+                    <TableCell>{stats?.average_rank?.toFixed(1) || '-'}</TableCell>
+                    <TableCell>{stats?.average_points?.toLocaleString() || 0}</TableCell>
+                    <TableCell>{stats?.total_points?.toLocaleString() || 0}</TableCell>
+                    <TableCell>{stats?.total_rank_points || 0}点</TableCell>
+                    <TableCell>{stats?.total_combined_score?.toLocaleString() || 0}</TableCell>
+                    <TableCell className="text-right">
+                      <Link href={`/players/${player.id}`} passHref>
+                        <Button variant="ghost" size="sm">詳細</Button>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))
               )}
             </TableBody>
           </Table>
